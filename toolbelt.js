@@ -4,7 +4,7 @@ export class Toolbelt {
 
         var self = this
 
-        // Random shuffle on arrays just like they did in underscore in the olden days
+        // Random shuffle on arrays just like they did with underscore in the olden days
         Array.prototype.shuffle = function() {
           var i = this.length, j, temp;
           if ( i == 0 ) return this;
@@ -17,6 +17,17 @@ export class Toolbelt {
           return this;
         }
 
+        // Returns an array of values without any duplicate values
+        Array.prototype.unique = function() {
+            var unique = [];
+            for ( i = 0; i < this.length; i++ ) {
+                var current = this[i];
+                if (unique.indexOf(current) < 0) unique.push(current);
+            }
+            return unique;
+        }
+
+
     }
 
     // returns true for 1 or more matches, where 'a' is an array and 'b' is a search string or an array of multiple search strings
@@ -27,6 +38,89 @@ export class Toolbelt {
         }
         // string match
         return a.indexOf(b) > -1;
+    }
+
+    // Returns an array of items that match items in another array, where 'a' is an array and 'b' is a search string or an array of multiple search strings
+    match_array(a, b) {
+
+        // array matches
+        if (Array.isArray(b)) {
+
+            var filteredArray = b.filter(function( c ) {
+                if (a.indexOf(c) > -1) {
+                    return c;
+                }
+            });
+
+            return filteredArray
+
+        }
+
+        // string match
+        return  (a.indexOf(b) > -1) ? b : [] ;
+
+    }
+
+    // Returns true if the array contains duplicates
+    has_duplicates(array) {
+        var valuesSoFar = Object.create(null);
+        for (var i = 0; i < array.length; ++i) {
+            var value = array[i];
+            if (value in valuesSoFar) {
+                return true;
+            }
+            valuesSoFar[value] = true;
+        }
+        return false;
+    }
+
+    // Split an array into groups of a specified size
+    chunkArrayInGroups(arr, size) {
+        var result =  arr.reduce((all,one,i) => {
+               const ch = Math.floor(i/size); 
+               all[ch] = [].concat((all[ch]||[]),one); 
+               return all
+            }, [])
+
+        return result
+    }
+
+    /*
+     * Sorting array of objects based on another array example
+
+    var item_array, item_order, ordered_array;
+
+    item_array = [ 
+      { id: 2, label: 'Two' }
+    , { id: 3, label: 'Three' }
+    , { id: 5, label: 'Five' }
+    , { id: 4, label: 'Four' }
+    , { id: 1, label: 'One'}
+    ];
+
+    item_order = [1,2,3,4,5];
+
+    ordered_array = mapOrder(item_array, item_order, 'id');
+
+    console.log('Ordered:', JSON.stringify(ordered_array));
+
+    */
+
+    // Sort array of objects based on another array
+    mapOrder(array, order, key) {
+      
+      array.sort( function (a, b) {
+        var A = a[key], B = b[key];
+        
+        if (order.indexOf(A) > order.indexOf(B)) {
+          return 1;
+        } else {
+          return -1;
+        }
+        
+      });
+      
+      return array;
     }
 
     readCookie(name) {
@@ -148,38 +242,149 @@ export class Toolbelt {
         return (check || isiPad ? true : false);
     }
 
-    vidFileType() {
+    temporalFormat(time) {   
+        
+        // Hours, minutes and seconds
 
-        // Might be redundent now that most browsers surrpot MP4
+        time = parseInt(time);
+        var hrs = ~~(time / 3600);
+        var mins = ~~((time % 3600) / 60);
+        var secs = time % 60;
 
-        let sUsrAg = navigator.userAgent;
+        // Output like "1:01" or "4:03:59" or "123:03:59"
+        var ret = "";
 
-        if (sUsrAg.indexOf("Chrome") > -1) {
-
-            return "mp4";
-
-        } else if (sUsrAg.indexOf("Safari") > -1) {
-
-            return "mp4";
-
-        } else if (sUsrAg.indexOf("Opera") > -1) {
-
-            return "oggv";
-
-        } else if (sUsrAg.indexOf("Firefox") > -1) {
-
-            return "webm";
-
-        } else if (sUsrAg.indexOf("MSIE") > -1) {
-
-            return "webm";
-
-        } else {
-
-            return "mp4";
-
+        if (hrs > 0) {
+            ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
         }
 
+        ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+        ret += "" + secs;
+        return ret;
+    }
+
+    hexToRgb(hex) {
+        // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+        var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+            return r + r + g + g + b + b;
+        });
+
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+
+    componentToHex(c) {
+        var hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+
+    rgbToHex(r, g, b) {
+        return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
+    }
+
+    getNextHighestIndex(arr, value) {
+
+        // Return the index of the next highest value in the array. 
+        // If there is no value in the array that is higher than the supplied value, 
+        // it will return the length of the array. If all values in the array are higher, 
+        // it will return 0.
+        var i = arr.length;
+        while (arr[--i] > value);
+        return ++i; 
+    }
+
+    mustache(l, a, m, c) {
+
+        var self = this
+
+        function h(a, b) {
+            b = b.pop ? b : b.split(".");
+            a = a[b.shift()] || "";
+            return 0 in b ? h(a, b) : a
+        }
+        var k = self.mustache,
+            e = "";
+        a = Array.isArray(a) ? a : a ? [a] : [];
+        a = c ? 0 in a ? [] : [1] : a;
+        for (c = 0; c < a.length; c++) {
+            var d = "",
+                f = 0,
+                n, b = "object" == typeof a[c] ? a[c] : {},
+                b = Object.assign({}, m, b);
+            b[""] = {
+                "": a[c]
+            };
+            l.replace(/([\s\S]*?)({{((\/)|(\^)|#)(.*?)}}|$)/g, function(a, c, l, m, p, q, g) {
+                f ? d += f && !p || 1 < f ? a : c : (e += c.replace(/{{{(.*?)}}}|{{(!?)(&?)(>?)(.*?)}}/g, function(a, c, e, f, g, d) {
+                    return c ? h(b, c) : f ? h(b, d) : g ? k(h(b, d), b) : e ? "" : (new Option(h(b, d))).innerHTML
+                }), n = q);
+                p ? --f || (g = h(b, g), e = /^f/.test(typeof g) ? e + g.call(b, d, function(a) {
+                    return k(a, b)
+                }) : e + k(d, g, b, n), d = "") : ++f
+            })
+        }
+        return e
+    }
+
+    validate(email) {
+
+        var filter = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+
+        return (filter.test(email)) ?  true : false ;
+
+    }
+
+    swipedetect(el, callback){
+      
+        var touchsurface = el,
+        swipedir,
+        startX,
+        startY,
+        dist,
+        distX,
+        distY,
+        threshold = 150, //required min distance traveled to be considered swipe
+        restraint = 100, // maximum distance allowed at the same time in perpendicular direction
+        allowedTime = 300, // maximum time allowed to travel that distance
+        elapsedTime,
+        startTime,
+        handleswipe = callback || function(swipedir){}
+      
+        touchsurface.addEventListener('touchstart', function(e){
+            var touchobj = e.changedTouches[0]
+            swipedir = 'none'
+            dist = 0
+            startX = touchobj.pageX
+            startY = touchobj.pageY
+            startTime = new Date().getTime() // record time when finger first makes contact with surface
+            e.preventDefault()
+        }, false)
+      
+        touchsurface.addEventListener('touchmove', function(e){
+            e.preventDefault() // prevent scrolling when inside DIV
+        }, false)
+      
+        touchsurface.addEventListener('touchend', function(e){
+            var touchobj = e.changedTouches[0]
+            distX = touchobj.pageX - startX // get horizontal dist traveled by finger while in contact with surface
+            distY = touchobj.pageY - startY // get vertical dist traveled by finger while in contact with surface
+            elapsedTime = new Date().getTime() - startTime // get time elapsed
+            if (elapsedTime <= allowedTime){ // first condition for awipe met
+                if (Math.abs(distX) >= threshold && Math.abs(distY) <= restraint){ // 2nd condition for horizontal swipe met
+                    swipedir = (distX < 0)? 'left' : 'right' // if dist traveled is negative, it indicates left swipe
+                }
+                else if (Math.abs(distY) >= threshold && Math.abs(distX) <= restraint){ // 2nd condition for vertical swipe met
+                    swipedir = (distY < 0)? 'up' : 'down' // if dist traveled is negative, it indicates up swipe
+                }
+            }
+            handleswipe(swipedir)
+            e.preventDefault()
+        }, false)
     }
 
 }
